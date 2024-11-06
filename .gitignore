@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+*.pyc
+synthetic_tests/__pycache__/
+handlers/__pycache__/
+imported_tests/*.json
