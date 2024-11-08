@@ -1,10 +1,12 @@
 import os
 import sys
 import json
+import re
 from config.config import (
     IMPORT_SYNTHETIC_TESTS_DUMP_PATH, IMPORT_DESTINATION_TESTS_DUMP_PATH,
     DESTINATION_SYNTHETIC_TESTS_API, DESTINATION_URL, DUMP_DIR,
-    DESTINATION_SYNTHETIC_TESTS_DETAIL_API, DESTINATION_V1_API_URL
+    DESTINATION_SYNTHETIC_TESTS_DETAIL_API, DESTINATION_V1_API_URL,
+    HOST_TO_REPLACE, SSE_GOV_DEV_URL
 )
 from clients.api_client import APIClient
 from utils.filter_utils import filter_tests
@@ -38,7 +40,10 @@ class SyntheticTestExporter:
 
         self.dump_dir = DUMP_DIR
         self.import_destination_dump_path = IMPORT_DESTINATION_TESTS_DUMP_PATH
+        self.synthetic_tests_from_source = None
+        self.sse_tests = []
 
+    def init_exporter(self):
         self.create_dump_folder()
         self.import_created_tests_from_destination()
         self.synthetic_tests_from_source = \
@@ -149,11 +154,14 @@ class SyntheticTestExporter:
         # for test_name, test in self.existing_steps_by_name.items():
         #     print("Test name: ", test_name)
 
-    def step_not_migrated(self, step):
+    def substep_not_migrated(self, step):
         return 'params' in step and 'subtestPublicId' in step['params'] \
             and step['name'] not in self.existing_steps_by_name
 
-    def build_post_body(synthetic_test):
+    def step_not_migrated(self, step):
+        return step['name'] not in self.existing_steps_by_name
+
+    def build_post_body(self, synthetic_test):
         keys = create_test_template.keys()
         body_json = {}
         test_dict_keys = synthetic_test.keys()
@@ -179,18 +187,35 @@ class SyntheticTestExporter:
             self.update_tests(new_test, test_type)
             if response.status_code != 200:
                 raise Exception("Invalid response code: {}. Error: {}".format(response.status_code, response.text))
-            print("successfully created the test..", response.text)
+            print("successfully created the test.." + synthetic_test['name'])
         except Exception as e:
             print(f"DD failed to create synthetic tests {DESTINATION_URL}. Error: {str(e)}")
+
+    def _url_exists_in_substep(self, substep):
+        return 'params' in substep and 'element' in substep['params'] and \
+            'url' in substep['params']['element']
+
+    def _update_url_in_substep(self, substep):
+        if self._url_exists_in_substep(substep):
+            url = substep['params']['element']['url']
+            substep['params']['element']['url'] = url.replace(HOST_TO_REPLACE, SSE_GOV_DEV_URL)
+            replace_org_pattern = r'org/(\d+)/connect'
+            match = re.search(replace_org_pattern, url)
+            if match:
+                org_id = match.group(1)
+                substep['params']['element']['url'] = url.replace(org_id, ORG_TO_REPLACE)
+        return substep
 
     def export_substeps(self, synthetic_test):
         if 'config' in synthetic_test and 'steps' in synthetic_test['config']:
             steps = synthetic_test['config']['steps'] or []
             for step in steps:
-                if self.step_not_migrated(step):
+                if self.substep_not_migrated(step):
                     step = self.source_steps_by_id[step['params']['subtestPublicId']]
+                    step = self._update_url_in_substep(step)
+                    import pdb;pdb.set_trace()
                     print(f"creating sub step name: {step['name']} parent step: {synthetic_test['name']}", )
-                    self._create(step, type='subtest')
+                    self._create(step, test_type='subtest')
 
     def _substeps_exists(self, synthetic_test):
         return 'config' in synthetic_test and 'steps' in synthetic_test['config']
@@ -249,7 +274,7 @@ class SyntheticTestExporter:
 
         # create the step
         print("Creating the test..", synthetic_test['name'])
-        self._create(synthetic_test, type='test')
+        self._create(synthetic_test, test_type='test')
 
     def _init_steps(self, step):
         if 'steps' not in step:
@@ -258,10 +283,12 @@ class SyntheticTestExporter:
 
     def _export(self, tests):
         for synthetic_test in tests:
-            if synthetic_test['type'] == 'browser':
-                synthetic_test = self._init_steps(synthetic_test)
-                self.export_substeps(synthetic_test)
-                self.create_step(synthetic_test)
+            if 'Private Resources' in synthetic_test['name']:
+                if synthetic_test['type'] == 'browser':
+                    synthetic_test = self._init_steps(synthetic_test)
+                    self.export_substeps(synthetic_test)
+                    if self.step_not_migrated(synthetic_test):
+                        self.create_step(synthetic_test)
 
     def export_synthetic_tests(self):
         self._export(self.sse_tests)

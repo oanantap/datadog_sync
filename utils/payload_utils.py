@@ -5,7 +5,7 @@ from config.config import (
     REPLACE_ORGS, ORG_TO_REPLACE, WEBEX_WEBHOOK_TO_REPLACE,
     REPLACE_WEBEX_ALERT_SPACE, PAGERDUTY_WEBHOOK_TO_REPLACE,
     REPLACE_PAGERDUTY_WEBHOOK, RUM_APPLICATION_ID, RUM_CLIENT_TOKEN_ID,
-    IMPORT_GLOBAL_VARIABLES_DUMP_PATH
+    SOURCE_GLOBAL_VARIABLES_DUMP_PATH
 )
 
 
@@ -19,7 +19,7 @@ def update_steps(synthetic_test):
 
 
 def update_variables(synthetic_test):
-    with open(IMPORT_GLOBAL_VARIABLES_DUMP_PATH) as file:
+    with open(SOURCE_GLOBAL_VARIABLES_DUMP_PATH) as file:
         global_variables = json.load(file)
         global_variables = global_variables['variables']
 

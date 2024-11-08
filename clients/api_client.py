@@ -1,4 +1,5 @@
 import requests
+import json
 from config.config import (
     SOURCE_APPLICATION_KEY, SOURCE_API_KEY, DESTINATION_API_KEY,
     DESTINATION_APPLICATION_KEY
@@ -33,7 +34,7 @@ class APIClient:
 
     def post(self, url, body):
         headers = self.get_headers()
-        response = requests.post(url, body, headers=headers)
+        response = requests.post(url, json.dumps(body), headers=headers)
         response.raise_for_status()
         return response
 

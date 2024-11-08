@@ -7,8 +7,9 @@ SOURCE_V1_API_URL = f'{SOURCE_API_URL}/api/v1'
 SOURCE_API_KEY = os.environ.get('SOURCE_API_KEY', '')
 SOURCE_APPLICATION_KEY = os.environ.get('SOURCE_APPLICATION_KEY', '')
 SOURCE_SYNTHETIC_VALIDATE_API = f'{SOURCE_V1_API_URL}/validate'
-SOURCE_SYNTHETIC_TESTS_API = f'{SOURCE_V1_API_URL}/synthetics/tests'
+SOURCE_SYNTHETIC_TESTS_API = f'{SOURCE_V1_API_URL}/synthetics/tests?limit=100'
 SOURCE_SYNTHETIC_TESTS_DETAIL_API = '{SOURCE_V1_API_URL}/synthetics/tests/browser/{public_id}'
+SOURCE_GLOBAL_VARIABLES_API = f'{SOURCE_V1_API_URL}/synthetics/variables'
 
 
 # destination configurations
@@ -17,8 +18,9 @@ DESTINATION_V1_API_URL = f'{DESTINATION_URL}/api/v1'
 DESTINATION_API_KEY = os.environ.get('DESTINATION_API_KEY', '')
 DESTINATION_APPLICATION_KEY = os.environ.get('DESTINATION_APPLICATION_KEY', '')
 DESTINATION_SYNTHETIC_VALIDATE_API = f'{DESTINATION_V1_API_URL}/validate'
-DESTINATION_SYNTHETIC_TESTS_API = f'{DESTINATION_V1_API_URL}/synthetics/tests'
+DESTINATION_SYNTHETIC_TESTS_API = f'{DESTINATION_V1_API_URL}/synthetics/tests?limit=100'
 DESTINATION_SYNTHETIC_TESTS_DETAIL_API = '{DESTINATION_V1_API_URL}/synthetics/tests/browser/{public_id}'
+DESTINATION_GLOBAL_VARIABLES_API = f'{DESTINATION_V1_API_URL}/synthetics/variables'
 
 
 RUM_APPLICATION_ID = os.environ.get('RUM_APPLICATION_ID', '')
@@ -27,7 +29,8 @@ RUM_CLIENT_TOKEN_ID = os.environ.get('RUM_CLIENT_TOKEN_ID', '')
 DUMP_DIR = 'imported_tests'
 IMPORT_SYNTHETIC_TESTS_DUMP_PATH = f'{DUMP_DIR}/source_synthetic_tests.json'
 IMPORT_DESTINATION_TESTS_DUMP_PATH = f'{DUMP_DIR}/destination_synthetic_tests.json'
-IMPORT_GLOBAL_VARIABLES_DUMP_PATH = f'{DUMP_DIR}/global_variables.json'
+SOURCE_GLOBAL_VARIABLES_DUMP_PATH = f'{DUMP_DIR}/source_global_variables.json'
+DESTINATION_GLOBAL_VARIABLES_DUMP_PATH = f'{DUMP_DIR}/destination_global_variables.json'
 
 EXCLUDE_TESTS = ['App Connectors']
 EXCLUDE_TAGS = ['env:service:mgmt-api-v2', 'env:service:up-api']
@@ -40,7 +43,7 @@ REPLACE_WEBEX_ALERT_SPACE = 'WEBEX_ALERT_SPACE'
 
 TAG_TO_REPLACE = 'env:GOVDEV'
 HOST_TO_REPLACE = 'https://dashboard.sse.cisco.com'
-ORG_TO_REPLACE = '8068522'
+ORG_TO_REPLACE = os.environ.get('ORG_TO_REPLACE', '')
 WEBEX_WEBHOOK_TO_REPLACE = '@webhook-KNEX_Alerts_Room'
 PAGERDUTY_WEBHOOK_TO_REPLACE = '@pagerduty-CDFW_services_-_frontend'
 GLOBAL_VARIABLES_REPLACES_DICT = {

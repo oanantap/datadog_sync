@@ -45,6 +45,7 @@ class SyntheticTestImporter:
         return []
 
     def extract_steps(self, synthetic_tests):
+        print("Total Synthetic tests found: ", len(synthetic_tests))
         for synthetic_test in synthetic_tests:
             if not self.steps_exists(synthetic_test):
                 steps = self.get_steps_for_synthetic_test(synthetic_test)
@@ -55,17 +56,22 @@ class SyntheticTestImporter:
         return os.path.exists(IMPORT_SYNTHETIC_TESTS_DUMP_PATH)
 
     def import_synthetic_tests(self):
-        self.client.validate_api(SOURCE_SYNTHETIC_VALIDATE_API)
+        if self.already_imported():
+            with open(IMPORT_SYNTHETIC_TESTS_DUMP_PATH, 'r') as f:
+                synthetic_tests = json.load(f)
+                return synthetic_tests
+        else:
+            self.client.validate_api(SOURCE_SYNTHETIC_VALIDATE_API)
 
-        synthetic_test = SyntheticTestFactory.create_synthetic_test(
-            self.api_key, self.app_key, type='import'
-        )
-        try:
-            print(f"Importing Synthetic tests from the source url {SOURCE_URL}....")
-            synthetic_tests = synthetic_test.download().get('tests', [])
-            print("Extracting steps for each synthetic test....")
-            synthetic_tests = self.extract_steps(synthetic_tests)
-            self.dump(synthetic_tests, filename='source_synthetic_tests')
-            print("Import successful ans saved file to source_synthetic_tests.json")
-        except Exception as e:
-            print(f"Datadog failed to import from the source {SOURCE_URL}. Error: {str(e)}")
+            synthetic_test = SyntheticTestFactory.create_synthetic_test(
+                self.api_key, self.app_key, type='import'
+            )
+            try:
+                print(f"Importing Synthetic tests from the source url {SOURCE_URL}....")
+                synthetic_tests = synthetic_test.download().get('tests', [])
+                print("Extracting steps for each synthetic test....")
+                synthetic_tests = self.extract_steps(synthetic_tests)
+                self.dump(synthetic_tests, filename='source_synthetic_tests')
+                print("Import successful ans saved file to source_synthetic_tests.json")
+            except Exception as e:
+                print(f"Datadog failed to import from the source {SOURCE_URL}. Error: {str(e)}")
